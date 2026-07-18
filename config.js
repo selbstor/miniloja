@@ -10,5 +10,7 @@
 const LOJAFACIL = {
   planilha_configuracoes: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbcOCbWT91wgXhKdgoZcxoFeartiLRXRzw-XFHdEXVT2gJ3LjCiS85WJzEweZAN8aUQI_10lZjl1Pe/pub?gid=480609827&single=true&output=csv",
   planilha_produtos: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbcOCbWT91wgXhKdgoZcxoFeartiLRXRzw-XFHdEXVT2gJ3LjCiS85WJzEweZAN8aUQI_10lZjl1Pe/pub?gid=952991100&single=true&output=csv",
-  salvar_pedidos: "https://script.google.com/macros/s/AKfycbzIL0xsHT8fd1PFO4JSepcny0eTbaVVxkw6BHGAOjmp8-7z4eSMjf8p39CBnCasj_tzlQ/exec",
+  salvar_pedidos: "https://script.google.com/macros/s/AKfycbxY_41-I6EZ3ttXYu6djJOHXGsCXaHYAZ4PDbXTNwUtnXdFTw23AvTtDu3jtLmkiyhh3Q/exec",
+
+  planilha_clientes: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbcOCbWT91wgXhKdgoZcxoFeartiLRXRzw-XFHdEXVT2gJ3LjCiS85WJzEweZAN8aUQI_10lZjl1Pe/pub?gid=664968812&single=true&output=csv",
 };

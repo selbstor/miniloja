@@ -669,6 +669,19 @@
       color: var(--white);
     }
 
+    .btn-details:disabled {
+      background: var(--gray-100);
+      border-color: var(--gray-200);
+      color: var(--gray-400);
+      cursor: not-allowed;
+    }
+
+    .btn-details:disabled:hover {
+      background: var(--gray-100);
+      border-color: var(--gray-200);
+      color: var(--gray-400);
+    }
+
     .no-results {
       grid-column: 1 / -1;
       text-align: center;
@@ -1463,6 +1476,75 @@
       font-weight: 700;
     }
 
+    .pix-copia-cola {
+      background: var(--primary-light);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-top: 4px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .pix-copia-cola.show {
+      display: block;
+    }
+
+    .pix-copia-cola-valor {
+      font-size: 0.85rem;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .pix-copia-cola-valor strong {
+      font-size: 1rem;
+    }
+
+    .pix-copia-cola-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .pix-copia-cola-input {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.75rem;
+      font-family: monospace;
+      padding: 8px 10px;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      background: var(--white);
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pix-copia-cola-btn {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .pix-copia-cola-btn:hover {
+      opacity: 0.9;
+    }
+
+    .pix-copia-cola-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
     .btn-whatsapp {
       width: 100%;
       padding: 15px;
@@ -2101,7 +2183,7 @@
               <button class="qty-btn" onclick="changeQty(1)">+</button>
             </div>
           </div>
-          <button class="btn-add-cart" onclick="addToCart()">
+          <button class="btn-add-cart" id="btnAddCart" onclick="addToCart()">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
               stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round"
@@ -2152,10 +2234,10 @@
           </svg></button>
       </div>
       <div class="checkout-body">
+        <div class="form-group"><label>Telefone *</label><input type='tel' id='custPhone' placeholder='(11) 99999-9999' maxlength='16' oninput='maskPhone(this); buscarClientePorTelefone(this.value)' onblur='buscarClientePorTelefone(this.value)'>
+        </div>
         <div class="form-group"><label>Nome completo *</label><input type="text" id="custName"
             placeholder="Seu nome completo"></div>
-        <div class="form-group"><label>Telefone *</label><input type='tel' id='custPhone' placeholder='(11) 99999-9999' maxlength='16' oninput='maskPhone(this)'>
-        </div>
         <div class="form-group"><label>Opção de Entrega *</label>
           <div class="radio-group" id="deliveryOptions"></div>
         </div>
@@ -2187,15 +2269,25 @@
             <option value="">Selecione...</option>
           </select></div>
         <div class="pix-info" id="pixInfo"></div>
+        <div class="pix-copia-cola" id="pixCopiaCola">
+          <div class="pix-copia-cola-valor">Pix no valor de <strong id="pixCopiaColaValor">R$ 0,00</strong></div>
+          <div class="pix-copia-cola-row">
+            <input type="text" class="pix-copia-cola-input" id="pixCopiaColaCodigo" readonly onclick="this.select()">
+            <button type="button" class="pix-copia-cola-btn" id="pixCopiaColaBtn" onclick="copiarCodigoPix()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copiar
+            </button>
+          </div>
+        </div>
         <div class="form-group"><label>Observações</label><textarea id="custObs"
-            placeholder="Alguma observação sobre o pedido?"></textarea></div>
+            placeholder=""></textarea></div>
         <div class="checkout-summary" id="checkoutSummary"></div>
-        <button class="btn-whatsapp" onclick="sendWhatsApp()">
+        <button class="btn-whatsapp" id="btnEnviarPedido" onclick="sendWhatsApp()">
           <svg viewBox="0 0 24 24" fill="currentColor">
             <path
               d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
           </svg>
-          Enviar Pedido pelo WhatsApp
+          <span id="btnEnviarPedidoTexto">Enviar Pedido pelo WhatsApp</span>
         </button>
       </div>
     </div>
@@ -2252,6 +2344,8 @@
     // State
     let CONFIG = {};
     let PRODUCTS = [];
+    let CLIENTES = {}; // cadastro de clientes, indexado por telefone (só números)
+    let lojaFechadaPorHorario = false; // true quando a mensagem do topo tem horário e o momento atual está fora dele
     let cart = [];
     let currentCoupon = null;
     let activeCategory = "Todos";
@@ -2352,6 +2446,7 @@
         else if (field === 'TAXA ENTREGA PADRÃO' || field === 'TAXA ENTREGA PADRAO') cfg.taxaEntregaPadrao = parsePrecoBR(val);
         else if (field === 'PIX') cfg.pix = val.toUpperCase() === 'SIM';
         else if (field === 'CHAVE PIX') cfg.chavePix = val;
+        else if (field === 'CIDADE PIX') cfg.cidadePix = val;
         else if (field === 'CARTÃO (NA ENTREGA)' || field === 'CARTAO (NA ENTREGA)' || field === 'CARTÃO' || field === 'CARTAO') { cfg.cartao = val.toUpperCase() === 'SIM'; cfg.cartaoNome = (row[0] || '').replace(/[⚙️📋🎨🚚🏷️💳💡]/g, '').trim(); }
         else if (field === 'DINHEIRO') cfg.dinheiro = val.toUpperCase() === 'SIM';
         else if (field === 'TRANSFERÊNCIA' || field === 'TRANSFERENCIA') cfg.transferencia = val.toUpperCase() === 'SIM';
@@ -2434,8 +2529,97 @@
     }
 
     // ============================================
+    // LOAD CLIENTES FROM SHEETS (aba "Clientes")
+    // ============================================
+    async function loadClientes() {
+      try {
+        if (!LOJAFACIL.planilha_clientes) return; // aba não configurada, ignora silenciosamente
+
+        const res = await fetch(LOJAFACIL.planilha_clientes + '&_t=' + Date.now(), { cache: 'no-store' });
+        const text = await res.text();
+        const rows = parseCSV(text);
+        if (!rows.length) return;
+
+        // Localiza a linha de cabeçalho procurando a coluna "TELEFONE"
+        let headerIdx = -1;
+        for (let i = 0; i < rows.length; i++) {
+          const rowUpper = rows[i].map(c => (c || '').toUpperCase());
+          if (rowUpper.some(c => c.includes('TELEFONE'))) { headerIdx = i; break; }
+        }
+        if (headerIdx === -1) return;
+
+        const headers = rows[headerIdx].map(c => (c || '').trim().toUpperCase());
+        const findCol = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
+
+        const col = {
+          telefone: findCol(['TELEFONE']),
+          nome: findCol(['NOME']),
+          cep: findCol(['CEP']),
+          endereco: findCol(['ENDEREÇO', 'ENDERECO']),
+          complemento: findCol(['COMPLEMENTO']),
+          bairro: findCol(['BAIRRO']),
+          cidade: findCol(['CIDADE'])
+        };
+
+        const clientes = {};
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+          const row = rows[i];
+          const telLimpo = (col.telefone !== -1 ? (row[col.telefone] || '') : '').replace(/\D/g, '');
+          if (!telLimpo) continue;
+
+          clientes[telLimpo] = {
+            telefone: telLimpo,
+            nome: col.nome !== -1 ? (row[col.nome] || '').trim() : '',
+            cep: col.cep !== -1 ? (row[col.cep] || '').trim() : '',
+            endereco: col.endereco !== -1 ? (row[col.endereco] || '').trim() : '',
+            complemento: col.complemento !== -1 ? (row[col.complemento] || '').trim() : '',
+            bairro: col.bairro !== -1 ? (row[col.bairro] || '').trim() : '',
+            cidade: col.cidade !== -1 ? (row[col.cidade] || '').trim() : ''
+          };
+        }
+        CLIENTES = clientes;
+      } catch (err) {
+        // Falha ao carregar clientes não deve travar a loja
+        console.error('Erro ao carregar clientes:', err);
+      }
+    }
+
+    // ============================================
     // APPLY CONFIG TO UI
     // ============================================
+    // ============================================
+    // HORÁRIO DE FUNCIONAMENTO (a partir da "Mensagem Topo")
+    // ============================================
+    // Procura por padrões "HH:MM às HH:MM" (aceita também "as", "à" ou "-" no lugar de "às")
+    // dentro do texto da mensagem do topo. Pode haver mais de um intervalo (ex: separados por "/").
+    // Retorna true se a loja deve ser considerada ABERTA agora, ou se a mensagem não tem nenhum
+    // horário reconhecível (nesse caso não restringe nada).
+    function verificarHorarioFuncionamento(mensagem) {
+      if (!mensagem) return true;
+
+      var regexHorario = /(\d{1,2}):(\d{2})\s*(?:às|as|à|-)\s*(\d{1,2}):(\d{2})/gi;
+      var intervalos = [];
+      var match;
+      while ((match = regexHorario.exec(mensagem)) !== null) {
+        var inicio = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+        var fim = parseInt(match[3], 10) * 60 + parseInt(match[4], 10);
+        intervalos.push({ inicio: inicio, fim: fim });
+      }
+
+      if (!intervalos.length) return true; // mensagem não tem horário, não restringe nada
+
+      var agora = new Date();
+      var minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+
+      return intervalos.some(function(faixa) {
+        if (faixa.fim < faixa.inicio) {
+          // Intervalo que passa da meia-noite (ex: 20:00 às 04:00)
+          return minutosAgora >= faixa.inicio || minutosAgora <= faixa.fim;
+        }
+        return minutosAgora >= faixa.inicio && minutosAgora <= faixa.fim;
+      });
+    }
+
     function applyConfig() {
       // Title
       document.title = CONFIG.tituloSite || (CONFIG.storeName ? CONFIG.storeName + ' — Loja Online' : 'Loja Online');
@@ -2604,12 +2788,21 @@
       }
       paySelect.addEventListener('change', function () {
         document.getElementById('pixInfo').classList.toggle('show', this.value === 'Pix' && CONFIG.pix);
+        buildCheckoutSummary();
       });
 
       // Show UI
       installPixels();
-      if (CONFIG.mensagemTopo) {
-        var topBar = document.getElementById('topBar');
+
+      // Verifica se a "Mensagem Topo" tem horário de funcionamento e se o momento atual está dentro dele
+      lojaFechadaPorHorario = !verificarHorarioFuncionamento(CONFIG.mensagemTopo);
+
+      var topBar = document.getElementById('topBar');
+      if (lojaFechadaPorHorario) {
+        topBar.textContent = 'ESTABELECIMENTO FECHADO';
+        topBar.style.background = CONFIG.corBarraTopo || '#B3261E';
+        topBar.classList.add('show');
+      } else if (CONFIG.mensagemTopo) {
         topBar.textContent = CONFIG.mensagemTopo;
         if (CONFIG.corBarraTopo) {
           topBar.style.background = CONFIG.corBarraTopo;
@@ -2696,7 +2889,7 @@
           featuredGrid.innerHTML = featured.map(function(p) {
             var idx = PRODUCTS.indexOf(p);
             var hasPromo = p.precoPromo && p.precoPromo < p.preco;
-            return '<div class="product-card" onclick="openProductModal(' + idx + ')"><div class="product-img-wrap"><img src="' + p.img1 + '" alt="' + p.nome + '" loading="lazy" onerror="handleImgError(this)">' + (hasPromo ? '<span class="badge-promo">-' + Math.round((1 - p.precoPromo / p.preco) * 100) + '%</span>' : '') + '</div><div class="product-info"><div class="product-cat">' + p.categoria + (p.subcategoria ? ' . ' + p.subcategoria : '') + '</div><div class="product-name">' + p.nome + '</div><div class="product-price"><span class="price-current">R$ ' + fp(hasPromo ? p.precoPromo : p.preco) + '</span>' + (hasPromo ? '<span class="price-old">R$ ' + fp(p.preco) + '</span>' : '') + '</div><button class="btn-details">COMPRAR</button></div></div>';
+            return '<div class="product-card" onclick="openProductModal(' + idx + ')"><div class="product-img-wrap"><img src="' + p.img1 + '" alt="' + p.nome + '" loading="lazy" onerror="handleImgError(this)">' + (hasPromo ? '<span class="badge-promo">-' + Math.round((1 - p.precoPromo / p.preco) * 100) + '%</span>' : '') + '</div><div class="product-info"><div class="product-cat">' + p.categoria + (p.subcategoria ? ' . ' + p.subcategoria : '') + '</div><div class="product-name">' + p.nome + '</div><div class="product-price"><span class="price-current">R$ ' + fp(hasPromo ? p.precoPromo : p.preco) + '</span>' + (hasPromo ? '<span class="price-old">R$ ' + fp(p.preco) + '</span>' : '') + '</div><button class="btn-details"' + (lojaFechadaPorHorario ? ' disabled' : '') + '>' + (lojaFechadaPorHorario ? 'FECHADO' : 'COMPRAR') + '</button></div></div>';
           }).join('');
         } else { featuredSection.style.display = 'none'; }
       } else { featuredSection.style.display = 'none'; }
@@ -2723,7 +2916,7 @@
           <span class="price-current">R$ ${fp(hasPromo ? p.precoPromo : p.preco)}</span>
           ${hasPromo ? `<span class="price-old">R$ ${fp(p.preco)}</span>` : ''}
         </div>
-        <button class="btn-details">COMPRAR</button>
+        <button class="btn-details"${lojaFechadaPorHorario ? ' disabled' : ''}>${lojaFechadaPorHorario ? 'FECHADO' : 'COMPRAR'}</button>
       </div>
     </div>`;
       }).join("");
@@ -2758,6 +2951,14 @@
       document.getElementById("productModal").classList.add("open");
       document.body.style.overflow = "hidden";
       document.body.classList.add('modal-open');
+
+      var btnAddCart = document.getElementById('btnAddCart');
+      if (btnAddCart) {
+        btnAddCart.disabled = !!lojaFechadaPorHorario;
+        btnAddCart.style.opacity = lojaFechadaPorHorario ? '0.5' : '';
+        btnAddCart.style.cursor = lojaFechadaPorHorario ? 'not-allowed' : '';
+      }
+
       trackEvent('ViewContent', { name: currentProduct.nome, value: hasPromo ? currentProduct.precoPromo : currentProduct.preco });
     }
     function closeProductModal() {
@@ -2776,6 +2977,7 @@
     // ============================================
     function addToCart() {
       if (!currentProduct) return;
+      if (lojaFechadaPorHorario) { showToast('Estabelecimento fechado no momento', true); return; }
       if (currentProduct.variacoes && !selectedVariation) { showToast("Selecione uma opção", true); return; }
       const qty = parseInt(document.getElementById("qtyVal").value);
       const hasPromo = currentProduct.precoPromo && currentProduct.precoPromo < currentProduct.preco;
@@ -2931,12 +3133,115 @@
       if (getDeliveryLabel()) html += `<div class="checkout-item"><span>${getDeliveryLabel()}</span><span>${fee > 0 ? 'R$ ' + fp(fee) : 'Grátis'}</span></div>`;
       html += `<div class="checkout-item" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--gray-200);font-weight:700;color:var(--text);font-size:1rem"><span>Total</span><span>R$ ${fp(total)}</span></div>`;
       document.getElementById("checkoutSummary").innerHTML = html;
+      atualizarPixCopiaCola(total);
+    }
+
+    // ============================================
+    // PIX COPIA E COLA (BR Code / EMV)
+    // ============================================
+
+    // Monta um campo no formato TLV (Tag-Length-Value) exigido pelo padrão BR Code
+    function pixTLV(id, valor) {
+      var len = String(valor.length).padStart(2, '0');
+      return id + len + valor;
+    }
+
+    // Calcula o CRC16-CCITT (polinômio 0x1021, valor inicial 0xFFFF) exigido no final do código Pix
+    function pixCRC16(str) {
+      var crc = 0xFFFF;
+      for (var i = 0; i < str.length; i++) {
+        crc ^= (str.charCodeAt(i) << 8);
+        for (var j = 0; j < 8; j++) {
+          if ((crc & 0x8000) !== 0) crc = ((crc << 1) ^ 0x1021);
+          else crc = (crc << 1);
+          crc &= 0xFFFF;
+        }
+      }
+      return crc.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    // Remove acentos e caracteres especiais (exigido pelo padrão Pix, que só aceita ASCII simples)
+    function pixSanitizar(texto, tamanhoMax) {
+      var limpo = (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      limpo = limpo.replace(/[^a-zA-Z0-9 ]/g, '').toUpperCase().trim();
+      return limpo.substring(0, tamanhoMax) || 'LOJA';
+    }
+
+    // Gera o código "Pix Copia e Cola" completo com o valor do pedido
+    function gerarPixCopiaCola(chave, nomeLoja, cidade, valor) {
+      var nome = pixSanitizar(nomeLoja, 25);
+      var cid = pixSanitizar(cidade || 'MACEIO', 15);
+      var valorStr = Number(valor).toFixed(2);
+
+      var merchantAccountInfo = pixTLV('00', 'br.gov.bcb.pix') + pixTLV('01', chave);
+
+      var payload = '';
+      payload += pixTLV('00', '01');                 // Payload Format Indicator
+      payload += pixTLV('01', '12');                 // Point of Initiation Method (com valor definido)
+      payload += pixTLV('26', merchantAccountInfo);  // Informações da conta Pix
+      payload += pixTLV('52', '0000');                // Merchant Category Code
+      payload += pixTLV('53', '986');                 // Moeda (BRL)
+      payload += pixTLV('54', valorStr);              // Valor da transação
+      payload += pixTLV('58', 'BR');                  // País
+      payload += pixTLV('59', nome);                  // Nome do recebedor
+      payload += pixTLV('60', cid);                   // Cidade do recebedor
+      payload += pixTLV('62', pixTLV('05', '***'));   // Identificador da transação (txid genérico)
+      payload += '6304';                              // Prefixo do CRC16
+      payload += pixCRC16(payload);
+
+      return payload;
+    }
+
+    // Atualiza (ou esconde) o bloco de código Pix conforme a forma de pagamento e o total do pedido
+    function atualizarPixCopiaCola(total) {
+      var bloco = document.getElementById('pixCopiaCola');
+      var paySelect = document.getElementById('paymentMethod');
+      if (!bloco || !paySelect) return;
+
+      var deveMostrar = CONFIG.pix && CONFIG.chavePix && paySelect.value === 'Pix' && total > 0;
+      bloco.classList.toggle('show', !!deveMostrar);
+      if (!deveMostrar) return;
+
+      var codigo = gerarPixCopiaCola(CONFIG.chavePix, CONFIG.storeName || 'LOJA', CONFIG.cidadePix, total);
+      document.getElementById('pixCopiaColaCodigo').value = codigo;
+      document.getElementById('pixCopiaColaValor').textContent = 'R$ ' + fp(total);
+    }
+
+    // Copia o código Pix para a área de transferência
+    function copiarCodigoPix() {
+      var input = document.getElementById('pixCopiaColaCodigo');
+      var btn = document.getElementById('pixCopiaColaBtn');
+      if (!input || !input.value) return;
+
+      var restaurarBotao = function() {
+        setTimeout(function() {
+          if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copiar';
+        }, 2000);
+      };
+
+      var mostrarSucesso = function() {
+        if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Copiado!';
+        if (typeof showToast === 'function') showToast('Código Pix copiado ✓');
+        restaurarBotao();
+      };
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(input.value).then(mostrarSucesso).catch(function() {
+          input.select();
+          document.execCommand('copy');
+          mostrarSucesso();
+        });
+      } else {
+        input.select();
+        document.execCommand('copy');
+        mostrarSucesso();
+      }
     }
 
     // ============================================
     // WHATSAPP SEND
     // ============================================
-    function sendWhatsApp() {
+    async function sendWhatsApp() {
       const name = document.getElementById("custName").value.trim();
       const phone = document.getElementById("custPhone").value.trim();
       const del = document.querySelector('input[name="delivery"]:checked');
@@ -2975,32 +3280,34 @@
         return;
       }
 
+      // Abre a aba do WhatsApp em branco JÁ AQUI, ainda dentro do clique do usuário.
+      // Isso evita que o navegador bloqueie o pop-up depois do "await" mais abaixo.
+      // A aba só será direcionada para o link do WhatsApp quando a mensagem estiver pronta.
+      var waWindow = window.open('', '_blank');
+
+      // Trava o botão para evitar cliques duplicados enquanto aguarda o servidor
+      var btnEnviar = document.getElementById('btnEnviarPedido');
+      var btnEnviarTexto = document.getElementById('btnEnviarPedidoTexto');
+      var textoOriginalBtn = btnEnviarTexto ? btnEnviarTexto.textContent : '';
+      if (btnEnviar) btnEnviar.disabled = true;
+      if (btnEnviarTexto) btnEnviarTexto.textContent = 'Enviando pedido...';
+
       const sub = cart.reduce((s, i) => s + i.preco * i.qty, 0);
       let disc = 0;
       if (currentCoupon) { disc = currentCoupon.tipo === "percentual" ? sub * (currentCoupon.valor / 100) : currentCoupon.valor; if (disc > sub) disc = sub; }
       const fee = getDeliveryFee(); const total = sub - disc + fee;
 
-      let msg = (CONFIG.msgPedido || "Olá! Segue meu pedido:") + "\n━━━━━━━━━━━━━━━\n";
-      cart.forEach(i => { msg += `${i.qty}x ${i.nome}${i.variacao ? ' (' + i.variacao + ')' : ''} — R$ ${fp(i.preco * i.qty)}\n`; });
-      msg += "━━━━━━━━━━━━━━━\n";
-      msg += `Subtotal: R$ ${fp(sub)}\n`;
-      if (disc > 0) msg += `Cupom ${currentCoupon.codigo}: -R$ ${fp(disc)}\n`;
-      if (getDeliveryLabel()) msg += `${getDeliveryLabel()}: ${fee > 0 ? 'R$ ' + fp(fee) : 'Grátis'}\n`;
-      msg += `*TOTAL: R$ ${fp(total)}*\n━━━━━━━━━━━━━━━\n`;
-      msg += `Nome: ${name}\nTel: ${phone}\n`;
-      if (del.value !== 'retirada') {
-        msg += 'Endereço:\n';
-        if (cep) msg += 'CEP: ' + cep + '\n';
-        msg += endereco + '\n';
-        if (complemento) msg += complemento + '\n';
-        msg += bairro + ' - ' + cidade + '\n';
-      }
-      msg += `Entrega: ${getDeliveryLabel()}\nPagamento: ${pay}\n`;
-      if (obs) msg += `Obs: ${obs}\n`;
+      // Gera um número de pedido provisório (usado apenas se o servidor não responder a tempo)
+      // (o sufixo evita duplicidade caso dois pedidos sejam feitos no mesmo segundo)
+      var agora = new Date();
+      var pad = function(n) { return String(n).padStart(2, '0'); };
+      var sufixo = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+      var numeroPedido = String(agora.getFullYear()).slice(-2) + pad(agora.getMonth() + 1) + pad(agora.getDate()) + '-' + pad(agora.getHours()) + pad(agora.getMinutes()) + pad(agora.getSeconds()) + '-' + sufixo;
 
       trackEvent('Purchase', { value: total });
       var itensList = cart.map(function(i) { return i.qty + 'x ' + i.nome + (i.variacao ? ' (' + i.variacao + ')' : '') + ' - R$ ' + fp(i.preco * i.qty); }).join(' | ');
       var dadosPedido = {
+        numeroPedido: numeroPedido,
         dataHora: new Date().toLocaleString('pt-BR'),
         nome: name,
         telefone: phone,
@@ -3019,9 +3326,47 @@
         cupom: currentCoupon ? currentCoupon.codigo : '',
         observacoes: obs
       };
-      salvarPedido(dadosPedido);
+
+      // Salva na planilha e tenta obter o número OFICIAL do pedido (o mesmo que vai na coluna "Nº Pedido").
+      // Se o servidor não responder a tempo (ou der erro), usamos o número provisório para não travar o pedido.
+      var resultado = await salvarPedidoEObterNumero(dadosPedido);
+      var numeroPedidoFinal = (resultado && resultado.numeroPedido) ? resultado.numeroPedido : numeroPedido;
+
+      let msg = (CONFIG.msgPedido || "Olá! Segue meu pedido:") + "\n━━━━━━━━━━━━━━━\n";
+      msg += "*DADOS DO CLIENTE:*\n";
+      msg += `Pedido: #${numeroPedidoFinal}\n`;
+      msg += `Nome: ${name}\nTel: ${phone}\n`;
+      if (del.value !== 'retirada') {
+        msg += 'Endereço:\n';
+        if (cep) msg += 'CEP: ' + cep + '\n';
+        msg += endereco + '\n';
+        if (complemento) msg += complemento + '\n';
+        msg += bairro + ' - ' + cidade + '\n';
+      }
+      msg += `Entrega: ${getDeliveryLabel()}\nPagamento: ${pay}\n`;
+      if (obs) msg += `Obs: ${obs}\n`;
+      msg += "━━━━━━━━━━━━━━━\n";
+      msg += "*ITENS DO PEDIDO:*\n";
+      cart.forEach(i => { msg += `${i.qty}x ${i.nome}${i.variacao ? ' (' + i.variacao + ')' : ''} — R$ ${fp(i.preco * i.qty)}\n`; });
+      msg += "━━━━━━━━━━━━━━━\n";
+      msg += `Subtotal: R$ ${fp(sub)}\n`;
+      if (disc > 0) msg += `Cupom ${currentCoupon.codigo}: -R$ ${fp(disc)}\n`;
+      if (getDeliveryLabel()) msg += `${getDeliveryLabel()}: ${fee > 0 ? 'R$ ' + fp(fee) : 'Grátis'}\n`;
+      msg += `*TOTAL: R$ ${fp(total)}*\n`;
+
       var waUrl = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(msg);
-      window.open(waUrl, '_blank');
+
+      // Direciona a aba já aberta para o link do WhatsApp (evita bloqueio de pop-up)
+      try {
+        if (waWindow && !waWindow.closed) { waWindow.location.href = waUrl; }
+        else { window.open(waUrl, '_blank'); }
+      } catch (err) {
+        window.open(waUrl, '_blank'); // fallback caso algo impeça o redirecionamento da aba já aberta
+      }
+
+      if (btnEnviar) btnEnviar.disabled = false;
+      if (btnEnviarTexto) btnEnviarTexto.textContent = textoOriginalBtn || 'Enviar Pedido pelo WhatsApp';
+
       closeCheckout();
       cart = [];
       currentCoupon = null;
@@ -3098,17 +3443,28 @@
       var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
       return luminance > 0.55;
     }
-    function salvarPedido(dadosPedido) {
-      if (!LOJAFACIL.salvar_pedidos) return;
+    async function salvarPedidoEObterNumero(dadosPedido) {
+      if (!LOJAFACIL.salvar_pedidos) return null;
       try {
-        fetch(LOJAFACIL.salvar_pedidos, {
+        var controller = new AbortController();
+        // Timeout de segurança: o Apps Script pode levar até ~15s em caso de pedidos simultâneos (LockService)
+        var timeoutId = setTimeout(function() { controller.abort(); }, 12000);
+
+        var response = await fetch(LOJAFACIL.salvar_pedidos, {
           method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(dadosPedido)
+          // IMPORTANTE: usar text/plain (não application/json) evita o preflight CORS (OPTIONS),
+          // que o Apps Script não trata. O doPost já faz JSON.parse(e.postData.contents) normalmente.
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(dadosPedido),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
+
+        var data = await response.json();
+        return data; // { status: 'ok', numeroPedido: N, ... }
       } catch (err) {
-        console.log('Erro ao salvar pedido:', err);
+        console.error('Erro ao salvar pedido / obter número oficial:', err);
+        return null;
       }
     }
     function closeOrderConfirmed() {
@@ -3309,7 +3665,7 @@
     // ============================================
     async function init() {
       try {
-        await Promise.all([loadConfig(), loadProducts()]);
+        await Promise.all([loadConfig(), loadProducts(), loadClientes()]);
         if (CONFIG.lojaAtiva === false) {
           document.getElementById('loadingScreen').classList.add('hidden');
           document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px"><div style="text-align:center;max-width:480px"><div style="width:64px;height:64px;background:rgba(42,92,63,0.08);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px"><svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' fill=\'none\' viewBox=\'0 0 24 24\' stroke-width=\'1.5\' stroke=\'#2A5C3F\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z\'/></svg></div><h1 style="font-family:var(--font);font-size:1.5rem;font-weight:700;color:#1B1B1B;margin-bottom:8px">' + (CONFIG.storeName || 'Nossa Loja') + '</h1><p style="font-family:var(--font);font-size:1rem;color:#6B6760;line-height:1.6;margin-bottom:24px">' + (CONFIG.msgManutencao || 'Estamos temporariamente fechados. Volte em breve!') + '</p>' + (CONFIG.whatsapp ? '<a href="https://wa.me/' + CONFIG.whatsapp + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:#25D366;color:white;border-radius:8px;font-family:var(--font);font-size:0.9rem;font-weight:600;text-decoration:none"><svg viewBox=\'0 0 24 24\' width=\'20\' height=\'20\' fill=\'currentColor\'><path d=\'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z\'/></svg>Fale Conosco</a>' : '') + '</div></div>';
@@ -3413,6 +3769,65 @@ async function buscarCep(cep) {
     cepInput.disabled = false;
     enderecoInput.placeholder = placeholderOriginal;
   }
+}
+
+// ============================================
+// BUSCA DE CLIENTE PELO TELEFONE (aba "Clientes")
+// ============================================
+
+// Evita repetir a mesma busca para o mesmo telefone
+var _ultimoTelBuscado = '';
+
+function buscarClientePorTelefone(valor) {
+  var telLimpo = (valor || '').replace(/\D/g, '');
+
+  var nomeInput = document.getElementById('custName');
+  var cepInput = document.getElementById('custCep');
+  var enderecoInput = document.getElementById('custEndereco');
+  var complementoInput = document.getElementById('custComplemento');
+  var bairroInput = document.getElementById('custBairro');
+  var cidadeInput = document.getElementById('custCidade');
+
+  // Telefone apagado ou incompleto: limpa os demais campos e reseta o controle de busca.
+  // Os dados só voltam a aparecer quando um telefone completo e cadastrado for digitado de novo.
+  if (telLimpo.length < 10) {
+    _ultimoTelBuscado = '';
+    if (nomeInput) nomeInput.value = '';
+    if (cepInput) cepInput.value = '';
+    if (enderecoInput) enderecoInput.value = '';
+    if (complementoInput) complementoInput.value = '';
+    if (bairroInput) bairroInput.value = '';
+    if (cidadeInput) cidadeInput.value = '';
+    return;
+  }
+
+  // Só busca quando o telefone estiver completo (10 ou 11 dígitos, com DDD)
+  if (telLimpo !== _ultimoTelBuscado) {
+    _ultimoTelBuscado = telLimpo;
+  } else {
+    return;
+  }
+
+  var cliente = CLIENTES && CLIENTES[telLimpo];
+  if (!cliente) return; // cliente novo, não faz nada
+
+  if (nomeInput && cliente.nome) nomeInput.value = cliente.nome;
+
+  if (cepInput && cliente.cep) {
+    cepInput.value = cliente.cep;
+    maskCep(cepInput);
+    _ultimoCepBuscado = cepInput.value.replace(/\D/g, ''); // evita nova chamada ao ViaCEP
+  }
+  if (enderecoInput && cliente.endereco) enderecoInput.value = cliente.endereco;
+  if (complementoInput && cliente.complemento) complementoInput.value = cliente.complemento;
+  if (bairroInput && cliente.bairro) bairroInput.value = cliente.bairro;
+  if (cidadeInput && cliente.cidade) cidadeInput.value = cliente.cidade;
+
+  [cepInput, enderecoInput, bairroInput, cidadeInput].forEach(function(el) {
+    if (el) el.classList.remove('field-error');
+  });
+
+  if (typeof showToast === 'function') showToast('Dados do cliente preenchidos automaticamente ✓');
 }
   </script>
 </body>
