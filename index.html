@@ -3571,7 +3571,7 @@
       renderCart();
       var orderConfirmedText = document.getElementById('orderConfirmedText');
       if (orderConfirmedText) {
-        orderConfirmedText.innerHTML = `Seu pedido foi recebido! Verifique a mensagem no seu WhatsApp, clique em <strong>Enviar</strong> para concluir ou confirmar através do telefone: <strong>${formatarTelefoneExibicao(CONFIG.whatsapp)}</strong>.`;
+        orderConfirmedText.innerHTML = `Seu pedido <strong>nº: #${numeroPedidoFinal}</strong> foi recebido! Verifique a mensagem no seu WhatsApp, clique em <strong>Enviar</strong> para concluir ou mais informações através do telefone: <strong>${formatarTelefoneExibicao(CONFIG.whatsapp)}</strong>.`;
       }
       document.getElementById('orderConfirmed').classList.add('open');
 
@@ -3581,7 +3581,7 @@
       // Dá um tempinho pro cliente realmente ver a mensagem "Pedido Enviado!" antes da
       // tela trocar pro WhatsApp (o app costuma abrir muito rápido, sem esse atraso a
       // confirmação mal aparece na tela).
-      await new Promise(function (resolve) { setTimeout(resolve, 3500); });
+      await new Promise(function (resolve) { setTimeout(resolve, 4000); });
 
       // Tenta abrir direto no aplicativo do WhatsApp (celular ou desktop, se instalado);
       // se o app não abrir em pouco tempo, cai automaticamente no WhatsApp Web/wa.me
