@@ -3335,6 +3335,13 @@
       return /Android/i.test(navigator.userAgent || '');
     }
 
+    // Detecta o Safari de verdade (iOS ou macOS) — exclui Chrome/Firefox/Edge no iOS,
+    // que usam "Safari" na string do navegador mas têm identificadores próprios.
+    function detectarSafari() {
+      var ua = navigator.userAgent || '';
+      return /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS|Android/i.test(ua);
+    }
+
     // Tenta abrir diretamente o aplicativo do WhatsApp (celular ou desktop, se instalado)
     // usando o protocolo "whatsapp://". Se o app não assumir o controle da aba em pouco
     // tempo (ou seja, se não estiver instalado), cai automaticamente no link tradicional
@@ -3404,8 +3411,39 @@
         return;
       }
 
-      // iOS e desktop: mantém a aba pré-aberta (evita bloqueio de pop-up) e tenta o
-      // protocolo "whatsapp://", com fallback por temporizador para o WhatsApp Web.
+      if (detectarSafari()) {
+        // No Safari (iOS ou macOS) navegamos direto na aba ATUAL, sem pré-abrir popup:
+        // o Safari bloqueia silenciosamente a navegação de uma aba aberta via window.open()
+        // se ela ficar tempo demais sem ser redirecionada (o que acontece aqui, já que
+        // esperamos a confirmação do pedido e mostramos a mensagem antes de abrir o
+        // WhatsApp). Como não existe um "intent://" com fallback embutido no Safari, usamos
+        // nosso próprio temporizador de segurança sobre a página atual.
+        var urlAppSafari = 'whatsapp://send?phone=' + telefone + '&text=' + textoCodificado;
+        var appAssumiuControleSafari = false;
+        function marcarAppAssumiuControleSafari() { appAssumiuControleSafari = true; }
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) marcarAppAssumiuControleSafari();
+        });
+        window.addEventListener('pagehide', marcarAppAssumiuControleSafari);
+        window.addEventListener('blur', marcarAppAssumiuControleSafari);
+
+        try {
+          window.location.href = urlAppSafari;
+        } catch (err) {
+          window.location.href = urlWeb;
+          return;
+        }
+
+        setTimeout(function () {
+          if (appAssumiuControleSafari) return; // o app abriu, não precisa do fallback
+          window.location.href = urlWeb;
+        }, 1200);
+        return;
+      }
+
+      // Desktop (Chrome, Firefox, Edge...): mantém a aba pré-aberta (evita bloqueio de
+      // pop-up) e tenta o protocolo "whatsapp://", com fallback por temporizador para o
+      // WhatsApp Web.
       var urlApp = 'whatsapp://send?phone=' + telefone + '&text=' + textoCodificado;
       var win = (waWindow && !waWindow.closed) ? waWindow : window.open('', '_blank');
       if (!win) { window.open(urlWeb, '_blank'); return; } // navegador bloqueou até a aba em branco
@@ -3487,11 +3525,12 @@
       // Isso evita que o navegador bloqueie o pop-up depois do "await" mais abaixo.
       // A aba só será direcionada para o link do WhatsApp quando a mensagem estiver pronta.
       //
-      // EXCEÇÃO: no Android, uma aba criada via window.open() parece ficar marcada pelo
-      // Chrome como "aberta por script" durante toda a sua vida, o que impede o app do
-      // WhatsApp de abrir mesmo depois (mesmo em um clique genuíno dentro dela). Por isso,
-      // no Android navegamos direto na aba atual mais adiante, sem pré-abrir nada aqui.
-      var waWindow = detectarAndroid() ? null : window.open('', '_blank');
+      // EXCEÇÃO: no Android e no Safari, uma aba criada via window.open() parece ficar
+      // marcada como "aberta por script" e, depois de um tempo (principalmente no Safari,
+      // que é mais rígido nisso), o navegador bloqueia silenciosamente qualquer tentativa
+      // de navegá-la mais tarde. Por isso, nessas plataformas navegamos direto na aba
+      // atual mais adiante, sem pré-abrir nada aqui.
+      var waWindow = (detectarAndroid() || detectarSafari()) ? null : window.open('', '_blank');
 
       // Trava o botão para evitar cliques duplicados enquanto aguarda o servidor
       var btnEnviar = document.getElementById('btnEnviarPedido');
