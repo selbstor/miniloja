@@ -2998,6 +2998,12 @@
       currentProduct = PRODUCTS[idx]; selectedVariation = null;
       document.getElementById("qtyVal").value = 1;
       document.getElementById("qtyVal").setAttribute('data-max', currentProduct.qtdMaxima);
+      // Reseta a rolagem do modal, para não abrir o produto novo já rolado na posição
+      // em que o produto anterior tinha ficado (o que escondia nome/preço/descrição)
+      var modalBodyEl = document.querySelector('#productModal .modal-body');
+      if (modalBodyEl) modalBodyEl.scrollTop = 0;
+      var modalEl = document.querySelector('#productModal .modal');
+      if (modalEl) modalEl.scrollTop = 0;
       const imgs = [currentProduct.img1, currentProduct.img2, currentProduct.img3, currentProduct.img4].filter(Boolean);
       document.getElementById("modalMainImg").src = imgs[0] || '';
       document.getElementById('modalMainImg').onerror = function() { handleImgError(this); };
