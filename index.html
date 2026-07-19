@@ -3685,11 +3685,11 @@
       renderCart();
       var orderConfirmedTitle = document.getElementById('orderConfirmedTitle');
       if (orderConfirmedTitle) {
-        orderConfirmedTitle.innerHTML = `Pedido Recebido nº: <span style="font-size:1.5em">#${numeroPedidoFinal}</span>`;
+        orderConfirmedTitle.innerHTML = `Pedido Recebido nº: <span style="font-size:1.2em">#${numeroPedidoFinal}</span>`;
       }
       var orderConfirmedText = document.getElementById('orderConfirmedText');
       if (orderConfirmedText) {
-        orderConfirmedText.innerHTML = `Verifique a mensagem no seu WhatsApp, clique em <strong>Enviar</strong> para concluir ou mais informações através do telefone: <strong>${formatarTelefoneExibicao(CONFIG.whatsapp)}</strong>.`;
+        orderConfirmedText.innerHTML = `Verifique a mensagem no seu WhatsApp, clique em <strong>Enviar</strong> para concluir ou mais informações através do telefone:<br><strong style="white-space:nowrap">${formatarTelefoneExibicao(CONFIG.whatsapp)}</strong>.`;
       }
       document.getElementById('orderConfirmed').classList.add('open');
 
