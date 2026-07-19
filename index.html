@@ -2332,7 +2332,7 @@
           <path stroke-linecap='round' stroke-linejoin='round' d='M4.5 12.75l6 6 9-13.5'/>
         </svg>
       </div>
-      <div class='order-confirmed-title'>Pedido Recebido!</div>
+      <div class='order-confirmed-title' id='orderConfirmedTitle'>Pedido Recebido!</div>
       <div class='order-confirmed-text' id='orderConfirmedText'>Seu pedido foi enviado! Ao abrir o WhatsApp, a mensagem já estará pronta — é só tocar em <strong>Enviar</strong> para concluir e falar com a loja.</div>
       <button onclick='closeOrderConfirmed()' style='margin-top:20px;padding:12px 32px;background:var(--primary);color:var(--white);border:none;border-radius:var(--radius);font-size:0.9rem;font-weight:600;cursor:pointer;font-family:var(--font);transition:all 0.2s ease'>OK</button>
     </div>
@@ -3335,11 +3335,12 @@
       return /Android/i.test(navigator.userAgent || '');
     }
 
-    // Detecta o Safari de verdade (iOS ou macOS) — exclui Chrome/Firefox/Edge no iOS,
-    // que usam "Safari" na string do navegador mas têm identificadores próprios.
-    function detectarSafari() {
-      var ua = navigator.userAgent || '';
-      return /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS|Android/i.test(ua);
+    // Detecta iOS/iPadOS de forma geral (qualquer navegador — Safari, Chrome, Firefox...).
+    // A Apple exige que todo navegador no iOS use o motor do Safari (WebKit) por baixo dos
+    // panos, então o mesmo problema de "aba pré-aberta fica bloqueada" do Safari também
+    // acontece no Chrome/Firefox/Edge quando rodam no iPhone/iPad.
+    function detectarIOS() {
+      return /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
     }
 
     // Tenta abrir diretamente o aplicativo do WhatsApp (celular ou desktop, se instalado)
@@ -3380,6 +3381,8 @@
       var textoCodificado = encodeURIComponent(mensagem);
       var urlWeb = 'https://wa.me/' + telefone + '?text=' + textoCodificado;
       var ehAndroid = detectarAndroid();
+      var ehIOS = detectarIOS();
+      var ehBrave = await detectarBrave();
 
       // Navegador in-app (Instagram, Facebook, TikTok...): copia a mensagem e orienta a
       // pessoa a abrir no navegador externo, em vez de tentar qualquer link de app.
@@ -3393,20 +3396,46 @@
         return;
       }
 
-      // Brave: tentar o protocolo whatsapp:// / intent:// dispara uma tela própria de
-      // confirmação de segurança do navegador. Para evitar isso, vamos direto pro link
-      // wa.me (o próprio WhatsApp cuida do redirecionamento pro app a partir daí). Como o
-      // próprio site do WhatsApp também vai disparar essa tela do Brave em seguida, avisamos
-      // a pessoa antes, pra ela não estranhar.
-      if (await detectarBrave()) {
-        avisarConfirmacaoAbrirApp('Seu navegador (Brave) vai pedir uma confirmação de segurança — toque em "Permitir" para abrir o WhatsApp.');
-        await new Promise(function (resolve) { setTimeout(resolve, 1800); });
-        try {
-          if (waWindow && !waWindow.closed) { waWindow.location.href = urlWeb; }
-          else { window.location.href = urlWeb; }
-        } catch (err) {
-          window.open(urlWeb, '_blank');
+      if (ehIOS) {
+        // Em qualquer navegador no iOS/iPadOS (Safari, Chrome, Firefox, Brave...) navegamos
+        // direto na aba ATUAL, sem pré-abrir popup: o WebKit (motor usado por todos eles no
+        // iOS, por exigência da Apple) bloqueia silenciosamente a navegação de uma aba aberta
+        // via window.open() se ela ficar tempo demais sem ser redirecionada — o que acontece
+        // aqui, já que esperamos a confirmação do pedido antes de abrir o WhatsApp.
+        if (ehBrave) {
+          avisarConfirmacaoAbrirApp('Seu navegador (Brave) vai pedir uma confirmação de segurança — toque em "Permitir" para abrir o WhatsApp.');
+          await new Promise(function (resolve) { setTimeout(resolve, 1800); });
         }
+
+        // No Brave, tentar o protocolo whatsapp:// dispara a tela própria de confirmação
+        // dele; como o wa.me já cuida do redirecionamento pro app depois, vamos direto pra lá.
+        if (ehBrave) {
+          try { window.location.href = urlWeb; } catch (err) { window.open(urlWeb, '_blank'); }
+          return;
+        }
+
+        // Demais navegadores no iOS: tenta o protocolo do app, com temporizador de
+        // segurança próprio (não existe "intent://" com fallback embutido no iOS).
+        var urlAppIOS = 'whatsapp://send?phone=' + telefone + '&text=' + textoCodificado;
+        var appAssumiuControleIOS = false;
+        function marcarAppAssumiuControleIOS() { appAssumiuControleIOS = true; }
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) marcarAppAssumiuControleIOS();
+        });
+        window.addEventListener('pagehide', marcarAppAssumiuControleIOS);
+        window.addEventListener('blur', marcarAppAssumiuControleIOS);
+
+        try {
+          window.location.href = urlAppIOS;
+        } catch (err) {
+          window.location.href = urlWeb;
+          return;
+        }
+
+        setTimeout(function () {
+          if (appAssumiuControleIOS) return; // o app abriu, não precisa do fallback
+          window.location.href = urlWeb;
+        }, 1200);
         return;
       }
 
@@ -3414,9 +3443,18 @@
         // No Android navegamos direto na aba ATUAL (sem usar a aba em branco pré-aberta):
         // uma aba criada via window.open() parece ficar marcada pelo Chrome como "aberta
         // por script" durante toda a sua vida, o que impede o app do WhatsApp de abrir
-        // mesmo depois (inclusive em um clique genuíno dentro dela). O esquema "intent://"
-        // já tem um fallback embutido (S.browser_fallback_url) caso o app não esteja
-        // instalado, então nem precisamos do temporizador de segurança aqui.
+        // mesmo depois (inclusive em um clique genuíno dentro dela).
+        if (ehBrave) {
+          // No Brave, tentar whatsapp:///intent:// dispara a tela própria de confirmação
+          // dele; vamos direto pro wa.me, que cuida do redirecionamento pro app depois.
+          avisarConfirmacaoAbrirApp('Seu navegador (Brave) vai pedir uma confirmação de segurança — toque em "Permitir" para abrir o WhatsApp.');
+          await new Promise(function (resolve) { setTimeout(resolve, 1800); });
+          try { window.location.href = urlWeb; } catch (err) { window.open(urlWeb, '_blank'); }
+          return;
+        }
+
+        // O esquema "intent://" já tem um fallback embutido (S.browser_fallback_url) caso
+        // o app não esteja instalado, então nem precisamos do temporizador de segurança aqui.
         var urlIntent = 'intent://send?phone=' + telefone + '&text=' + textoCodificado +
           '#Intent;scheme=whatsapp;package=com.whatsapp;S.browser_fallback_url=' + encodeURIComponent(urlWeb) + ';end';
         try {
@@ -3427,43 +3465,21 @@
         return;
       }
 
-      if (detectarSafari()) {
-        // No Safari (iOS ou macOS) navegamos direto na aba ATUAL, sem pré-abrir popup:
-        // o Safari bloqueia silenciosamente a navegação de uma aba aberta via window.open()
-        // se ela ficar tempo demais sem ser redirecionada (o que acontece aqui, já que
-        // esperamos a confirmação do pedido e mostramos a mensagem antes de abrir o
-        // WhatsApp). Como não existe um "intent://" com fallback embutido no Safari, usamos
-        // nosso próprio temporizador de segurança sobre a página atual.
-        var urlAppSafari = 'whatsapp://send?phone=' + telefone + '&text=' + textoCodificado;
-        var appAssumiuControleSafari = false;
-        function marcarAppAssumiuControleSafari() { appAssumiuControleSafari = true; }
-        document.addEventListener('visibilitychange', function () {
-          if (document.hidden) marcarAppAssumiuControleSafari();
-        });
-        window.addEventListener('pagehide', marcarAppAssumiuControleSafari);
-        window.addEventListener('blur', marcarAppAssumiuControleSafari);
-
-        try {
-          window.location.href = urlAppSafari;
-        } catch (err) {
-          window.location.href = urlWeb;
-          return;
-        }
-
-        setTimeout(function () {
-          if (appAssumiuControleSafari) return; // o app abriu, não precisa do fallback
-          window.location.href = urlWeb;
-        }, 1200);
-        return;
-      }
-
-      // Desktop (Chrome, Firefox, Edge...): mantém a aba pré-aberta (evita bloqueio de
-      // pop-up) e tenta o protocolo "whatsapp://", com fallback por temporizador para o
-      // WhatsApp Web.
-      var urlApp = 'whatsapp://send?phone=' + telefone + '&text=' + textoCodificado;
+      // Desktop (Chrome, Firefox, Edge, Brave...): mantém a aba pré-aberta (evita bloqueio
+      // de pop-up) e tenta o protocolo "whatsapp://", com fallback por temporizador para o
+      // WhatsApp Web. No Brave, pulamos direto pro wa.me (ele mostra sua própria tela de
+      // confirmação para qualquer link de app, então nem tentamos o protocolo primeiro).
       var win = (waWindow && !waWindow.closed) ? waWindow : window.open('', '_blank');
       if (!win) { window.open(urlWeb, '_blank'); return; } // navegador bloqueou até a aba em branco
 
+      if (ehBrave) {
+        avisarConfirmacaoAbrirApp('Seu navegador (Brave) vai pedir uma confirmação de segurança — toque em "Permitir" para abrir o WhatsApp.');
+        await new Promise(function (resolve) { setTimeout(resolve, 1800); });
+        try { win.location.href = urlWeb; } catch (err) { window.open(urlWeb, '_blank'); }
+        return;
+      }
+
+      var urlApp = 'whatsapp://send?phone=' + telefone + '&text=' + textoCodificado;
       var appAssumiuControle = false;
       function marcarAppAssumiuControle() { appAssumiuControle = true; }
 
@@ -3546,12 +3562,13 @@
       // Isso evita que o navegador bloqueie o pop-up depois do "await" mais abaixo.
       // A aba só será direcionada para o link do WhatsApp quando a mensagem estiver pronta.
       //
-      // EXCEÇÃO: no Android e no Safari, uma aba criada via window.open() parece ficar
-      // marcada como "aberta por script" e, depois de um tempo (principalmente no Safari,
-      // que é mais rígido nisso), o navegador bloqueia silenciosamente qualquer tentativa
-      // de navegá-la mais tarde. Por isso, nessas plataformas navegamos direto na aba
-      // atual mais adiante, sem pré-abrir nada aqui.
-      var waWindow = (detectarAndroid() || detectarSafari()) ? null : window.open('', '_blank');
+      // EXCEÇÃO: no Android e em qualquer navegador no iOS/iPadOS, uma aba criada via
+      // window.open() parece ficar marcada como "aberta por script" e, depois de um tempo
+      // (principalmente no iOS, que é mais rígido nisso por usar o motor do Safari), o
+      // navegador bloqueia silenciosamente qualquer tentativa de navegá-la mais tarde. Por
+      // isso, nessas plataformas navegamos direto na aba atual mais adiante, sem pré-abrir
+      // nada aqui.
+      var waWindow = (detectarAndroid() || detectarIOS()) ? null : window.open('', '_blank');
 
       // Em vez de deixar a aba em branco (about:blank) enquanto aguardamos a confirmação
       // do pedido, escrevemos uma pequena página avisando o que está acontecendo.
@@ -3562,15 +3579,16 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Redirecionando para o WhatsApp...</title>
 <style>
   html,body{height:100%;margin:0}
   body{display:flex;align-items:center;justify-content:center;background:#FAFAF8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:24px;box-sizing:border-box}
-  .box{max-width:380px;text-align:center}
-  .spinner{width:40px;height:40px;border:4px solid rgba(42,92,63,0.15);border-top-color:#2A5C3F;border-radius:50%;margin:0 auto 20px;animation:spin 0.8s linear infinite}
+  .box{max-width:420px;text-align:center}
+  .spinner{width:48px;height:48px;border:5px solid rgba(42,92,63,0.15);border-top-color:#2A5C3F;border-radius:50%;margin:0 auto 24px;animation:spin 0.8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
-  h1{font-size:1.15rem;color:#1B1B1B;margin:0 0 10px}
-  p{font-size:0.92rem;color:#6B6B68;line-height:1.5;margin:0 0 6px}
+  h1{font-size:1.5rem;color:#1B1B1B;margin:0 0 16px;line-height:1.3}
+  p{font-size:1.15rem;color:#4A4A47;line-height:1.55;margin:0 0 12px}
   strong{color:#2A5C3F}
 </style>
 </head>
@@ -3637,8 +3655,8 @@
       var numeroPedidoFinal = (resultado && resultado.numeroPedido) ? resultado.numeroPedido : numeroPedido;
 
       let msg = (CONFIG.msgPedido || "Olá! Segue meu pedido:") + "\n━━━━━━━━━━━━━━━\n";
-      msg += "*DADOS DO CLIENTE:*\n";
       msg += `Pedido: #${numeroPedidoFinal}\n`;
+      msg += "*DADOS DO CLIENTE:*\n";
       msg += `Nome: ${name}\nTel: ${phone}\n`;
       if (del.value !== 'retirada') {
         msg += 'Endereço:\n';
@@ -3665,9 +3683,13 @@
       cart = [];
       currentCoupon = null;
       renderCart();
+      var orderConfirmedTitle = document.getElementById('orderConfirmedTitle');
+      if (orderConfirmedTitle) {
+        orderConfirmedTitle.innerHTML = `Pedido Recebido <span style="font-size:1.5em">nº#${numeroPedidoFinal}</span>`;
+      }
       var orderConfirmedText = document.getElementById('orderConfirmedText');
       if (orderConfirmedText) {
-        orderConfirmedText.innerHTML = `Seu pedido <strong>nº: #${numeroPedidoFinal}</strong> foi recebido! Verifique a mensagem no seu WhatsApp, clique em <strong>Enviar</strong> para concluir ou mais informações através do telefone: <strong>${formatarTelefoneExibicao(CONFIG.whatsapp)}</strong>.`;
+        orderConfirmedText.innerHTML = `Seu pedido foi recebido! Verifique a mensagem no seu WhatsApp, clique em <strong>Enviar</strong> para concluir ou mais informações através do telefone: <strong>${formatarTelefoneExibicao(CONFIG.whatsapp)}</strong>.`;
       }
       document.getElementById('orderConfirmed').classList.add('open');
 
