@@ -3558,6 +3558,11 @@
     async function sendWhatsApp() {
       const name = document.getElementById("custName").value.trim();
       const phone = document.getElementById("custPhone").value.trim();
+      // O formulário só pede o número local (sem DDD) — combina com o DDD detectado pelo
+      // CEP do cliente (ou o da loja, se não tiver CEP informado ainda)
+      const phoneComDDD = formatarTelefoneExibicao(obterDDDDetectado() + phone.replace(/\D/g, ''));
+      // Versão só com números (sem parênteses/espaço/hífen), pra gravar nas planilhas
+      const phoneApenasNumeros = obterDDDDetectado() + phone.replace(/\D/g, '');
       const del = document.querySelector('input[name="delivery"]:checked');
       const pay = document.getElementById("paymentMethod").value;
       var cep = document.getElementById('custCep') ? document.getElementById('custCep').value.trim() : '';
@@ -3668,7 +3673,7 @@
         numeroPedido: numeroPedido,
         dataHora: new Date().toLocaleString('pt-BR'),
         nome: name,
-        telefone: phone,
+        telefone: phoneApenasNumeros,
         cep: typeof cep !== 'undefined' ? cep : '',
         endereco: typeof endereco !== 'undefined' ? endereco : '',
         bairro: typeof bairro !== 'undefined' ? bairro : '',
@@ -3687,9 +3692,9 @@
 
       function montarMensagem(numeroParaMensagem) {
         let m = (CONFIG.msgPedido || "Olá! Segue meu pedido:") + "\n━━━━━━━━━━━━━━━\n";
-        m += `Pedido: #${numeroParaMensagem}\n`;
+        m += `Nº do Pedido: #${numeroParaMensagem}\n`;
         m += "*DADOS DO CLIENTE:*\n";
-        m += `Nome: ${name}\nTel: ${phone}\n`;
+        m += `Nome: ${name}\nTel: ${phoneComDDD}\n`;
         if (del.value !== 'retirada') {
           m += 'Endereço:\n';
           if (cep) m += 'CEP: ' + cep + '\n';
@@ -3930,6 +3935,16 @@
       if (v.length === 11) return '(' + v.substr(0, 2) + ') ' + v.substr(2, 5) + '-' + v.substr(7);
       if (v.length === 10) return '(' + v.substr(0, 2) + ') ' + v.substr(2, 4) + '-' + v.substr(6);
       return numero || '';
+    }
+
+    // Retorna o DDD detectado a partir do CEP digitado (via ViaCEP). Se o cliente ainda não
+    // informou CEP (ex: retirada, sem endereço) ou a busca falhar, usa o DDD do WhatsApp da
+    // loja como alternativa, pra sempre ter algum DDD disponível.
+    function obterDDDDetectado() {
+      if (window._dddDetectadoPorCep) return window._dddDetectadoPorCep;
+      var v = (CONFIG.whatsapp || '').replace(/\D/g, '');
+      if (v.length > 11 && v.indexOf('55') === 0) v = v.substring(2); // remove o código do país (55)
+      return v.substring(0, 2);
     }
 
     function maskPhone(input) {
@@ -4222,6 +4237,10 @@ async function buscarCep(cep) {
       bairroInput.value = data.bairro || '';
       cidadeInput.value = (data.localidade && data.uf) ? `${data.localidade}/${data.uf}` : '';
 
+      // ViaCEP já retorna o DDD da região do CEP — guardamos pra combinar com o telefone
+      // do cliente (que só pede o número local, sem DDD)
+      if (data.ddd) { window._dddDetectadoPorCep = data.ddd; }
+
       // Remove bordas vermelhas de erro (se houver) após o preenchimento
       [cepInput, enderecoInput, bairroInput, cidadeInput].forEach(function(el) {
         el.classList.remove('field-error');
@@ -4301,6 +4320,16 @@ function buscarClientePorTelefone(valor) {
     cepInput.value = cliente.cep;
     maskCep(cepInput);
     _ultimoCepBuscado = cepInput.value.replace(/\D/g, ''); // evita nova chamada ao ViaCEP
+
+    // Busca o DDD em segundo plano a partir do CEP já salvo do cliente (sem mexer nos
+    // campos de endereço, que já estão preenchidos com os dados do cadastro)
+    var cepParaDDD = cepInput.value.replace(/\D/g, '');
+    if (cepParaDDD.length === 8) {
+      fetch(`https://viacep.com.br/ws/${cepParaDDD}/json/`)
+        .then(function(r) { return r.json(); })
+        .then(function(d) { if (d && d.ddd) { window._dddDetectadoPorCep = d.ddd; } })
+        .catch(function() { /* se falhar, só não detecta o DDD dessa vez */ });
+    }
   }
   if (enderecoInput && cliente.endereco) enderecoInput.value = cliente.endereco;
   if (complementoInput && cliente.complemento) complementoInput.value = cliente.complemento;
