@@ -2247,13 +2247,13 @@
         <div class="form-group"><label>Opção de Entrega *</label>
           <div class="radio-group" id="deliveryOptions"></div>
         </div>
-        <div class="form-group"><label>Telefone *</label><input type='tel' id='custPhone' placeholder='99999-9999' maxlength='10' oninput='maskPhone(this); limparCamposSeTelefoneIncompleto(this.value)'>
+        <div class="form-group"><label>Telefone *</label><input type='tel' id='custPhone' placeholder='99999-9999' maxlength='10' oninput='maskPhone(this); limparCamposSeTelefoneIncompleto(this.value); buscarClientePorTelefone(this.value)' onblur='buscarClientePorTelefone(this.value)'>
         </div>
         <div class="form-group"><label>Nome completo *</label><input type="text" id="custName"
             placeholder="Seu nome completo"></div>
         <div id='addressGroup' style='display:none'>
   <div class='form-group'>
-    <label>CEP *</label>
+    <label>CEP</label>
     <input type='text' id='custCep' placeholder='00000-000' maxlength='9' oninput='maskCep(this); buscarCep(this.value); buscarClientePorCep(this.value)' onblur='buscarCep(this.value); buscarClientePorCep(this.value)'>
   </div>
   <div class='form-group'>
@@ -4282,6 +4282,44 @@ function limparCamposSeTelefoneIncompleto(valor) {
   _ultimoTelBuscado = '';
   var nomeInput = document.getElementById('custName');
   if (nomeInput) nomeInput.value = '';
+}
+
+// Busca o cliente pelo telefone completo (DDD detectado + número local digitado). Usar o
+// DDD garante uma correspondência exata — evita confundir clientes de regiões diferentes
+// que, por coincidência, tenham o mesmo número local.
+function buscarClientePorTelefone(valor) {
+  var telLocal = (valor || '').replace(/\D/g, '');
+  if (telLocal.length < 8) return; // ainda incompleto, a limpeza já foi tratada acima
+
+  var telCompleto = obterDDDDetectado() + telLocal;
+  if (telCompleto === _ultimoTelBuscado) return;
+  _ultimoTelBuscado = telCompleto;
+
+  var cliente = CLIENTES && CLIENTES[telCompleto];
+  if (!cliente) return; // cliente novo (ou DDD ainda não detectado corretamente), não faz nada
+
+  var nomeInput = document.getElementById('custName');
+  var enderecoInput = document.getElementById('custEndereco');
+  var complementoInput = document.getElementById('custComplemento');
+  var bairroInput = document.getElementById('custBairro');
+  var cidadeInput = document.getElementById('custCidade');
+  var cepInput = document.getElementById('custCep');
+
+  if (nomeInput && cliente.nome) nomeInput.value = cliente.nome;
+  if (cepInput && !cepInput.value && cliente.cep) {
+    cepInput.value = cliente.cep;
+    maskCep(cepInput);
+  }
+  if (enderecoInput && !enderecoInput.value && cliente.endereco) enderecoInput.value = cliente.endereco;
+  if (complementoInput && !complementoInput.value && cliente.complemento) complementoInput.value = cliente.complemento;
+  if (bairroInput && !bairroInput.value && cliente.bairro) bairroInput.value = cliente.bairro;
+  if (cidadeInput && !cidadeInput.value && cliente.cidade) cidadeInput.value = cliente.cidade;
+
+  [enderecoInput, bairroInput, cidadeInput].forEach(function(el) {
+    if (el) el.classList.remove('field-error');
+  });
+
+  if (typeof showToast === 'function') showToast('Dados do cliente preenchidos automaticamente ✓');
 }
 
 // Extrai só o número local (sem DDD) de um telefone salvo com DDD (10 ou 11 dígitos)
