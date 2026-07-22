@@ -3387,6 +3387,11 @@
       return false;
     }
 
+    // Detecta o Microsoft Edge (identificador "EdgiOS" no user agent, no iPhone/iPad)
+    function detectarEdge() {
+      return /EdgiOS/i.test(navigator.userAgent || '');
+    }
+
     // Mostra um aviso na tela pedindo pra pessoa confirmar/permitir quando o navegador
     // perguntar se pode abrir o WhatsApp — usado no Brave e nos demais navegadores desktop.
     function avisarConfirmacaoAbrirApp(mensagemTexto) {
@@ -3450,10 +3455,13 @@
           return;
         }
 
+        // Brave e Edge no iOS parecem demorar mais pra processar essa tentativa (ou nem
+        // dispararem nada) — damos um tempo um pouco maior de segurança pra eles.
+        var tempoFallbackIOS = (ehBrave || detectarEdge()) ? 2000 : 1200;
         setTimeout(function () {
           if (appAssumiuControleIOS) return; // o app abriu, não precisa do fallback
           window.location.href = urlWeb;
-        }, 1200);
+        }, tempoFallbackIOS);
         return;
       }
 
@@ -3720,14 +3728,16 @@
         return m;
       }
 
-      function mostrarConfirmacao(numeroParaExibir) {
+      function mostrarConfirmacao(numeroParaExibir, incluirNumero) {
         closeCheckout();
         cart = [];
         currentCoupon = null;
         renderCart();
         var orderConfirmedTitle = document.getElementById('orderConfirmedTitle');
         if (orderConfirmedTitle) {
-          orderConfirmedTitle.innerHTML = `Pedido Recebido nº: <span style="font-size:1.2em">#${numeroParaExibir}</span>`;
+          orderConfirmedTitle.innerHTML = incluirNumero
+            ? `Pedido Recebido nº: <span style="font-size:1.2em">#${numeroParaExibir}</span>`
+            : 'Pedido Recebido!';
         }
         var orderConfirmedText = document.getElementById('orderConfirmedText');
         if (orderConfirmedText) {
@@ -3772,7 +3782,7 @@
           window.location.href = urlWebSafari;
         }, 1200);
 
-        mostrarConfirmacao(numeroPedido);
+        mostrarConfirmacao(numeroPedido, false);
 
         var btnFecharX = document.getElementById('orderConfirmedCloseX');
         var btnFecharOk = document.getElementById('orderConfirmedOk');
@@ -3800,7 +3810,7 @@
       // Mostra a confirmação ANTES de abrir o WhatsApp — em alguns celulares/navegadores
       // a página pode navegar direto para o app ou para o wa.me logo em seguida, então é
       // importante que o cliente já veja o aviso antes disso acontecer.
-      mostrarConfirmacao(numeroPedidoFinal);
+      mostrarConfirmacao(numeroPedidoFinal, true);
 
       // Trava os botões de fechar (X e OK) enquanto o redirecionamento pro WhatsApp ainda
       // não aconteceu — se o cliente fechar essa tela antes da hora, o redirecionamento
