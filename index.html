@@ -2430,6 +2430,7 @@
         if (field === 'NOME DA LOJA') cfg.storeName = val;
         else if (field === 'LOGO (URL)') cfg.logo = val;
         else if (field === 'WHATSAPP') cfg.whatsapp = val;
+        else if (field === 'ENVIAR WHATSAPP') cfg.enviarWhatsapp = val.toUpperCase() === 'SIM';
         else if (field === 'INSTAGRAM') cfg.instagram = val;
         else if (field === 'FACEBOOK') cfg.facebook = val;
         else if (field === 'PIXEL FACEBOOK') cfg.pixelFacebook = val;
@@ -3389,7 +3390,7 @@
 
     // Detecta o Microsoft Edge (identificador "EdgiOS" no user agent, no iPhone/iPad)
     function detectarEdge() {
-      return /EdgiOS/i.test(navigator.userAgent || '');
+      return /EdgiOS|EdgA/i.test(navigator.userAgent || '');
     }
 
     // Mostra um aviso na tela pedindo pra pessoa confirmar/permitir quando o navegador
@@ -3476,6 +3477,34 @@
           avisarConfirmacaoAbrirApp('Seu navegador (Brave) vai pedir uma confirmação de segurança — toque em "Permitir" para abrir o WhatsApp.');
           await new Promise(function (resolve) { setTimeout(resolve, 1800); });
           try { window.location.href = urlWeb; } catch (err) { window.open(urlWeb, '_blank'); }
+          return;
+        }
+
+        if (detectarEdge()) {
+          // O Edge no Android parece demorar mais pra processar a tentativa de abrir o
+          // app — em vez de confiar só no fallback embutido do "intent://" (que pode
+          // disparar cedo demais), usamos nosso próprio temporizador, bem mais generoso.
+          var urlIntentEdge = 'intent://send?phone=' + telefone + '&text=' + textoCodificado +
+            '#Intent;scheme=whatsapp;package=com.whatsapp;end';
+          var appAssumiuControleEdgeAndroid = false;
+          function marcarAppAssumiuControleEdgeAndroid() { appAssumiuControleEdgeAndroid = true; }
+          document.addEventListener('visibilitychange', function () {
+            if (document.hidden) marcarAppAssumiuControleEdgeAndroid();
+          });
+          window.addEventListener('pagehide', marcarAppAssumiuControleEdgeAndroid);
+          window.addEventListener('blur', marcarAppAssumiuControleEdgeAndroid);
+
+          try {
+            window.location.href = urlIntentEdge;
+          } catch (err) {
+            window.location.href = urlWeb;
+            return;
+          }
+
+          setTimeout(function () {
+            if (appAssumiuControleEdgeAndroid) return;
+            window.location.href = urlWeb;
+          }, 3000);
           return;
         }
 
@@ -3744,6 +3773,34 @@
           orderConfirmedText.innerHTML = `Verifique a mensagem no seu WhatsApp, clique em <strong>Enviar</strong> para concluir ou mais informações através do telefone:<br><strong style="white-space:nowrap">${formatarTelefoneExibicao(CONFIG.whatsapp)}</strong>.`;
         }
         document.getElementById('orderConfirmed').classList.add('open');
+      }
+
+      // Se a loja tiver desativado o envio pro WhatsApp (campo "Enviar Whatsapp" vazio ou
+      // "Não" na aba Configurações), só salva o pedido na planilha e mostra uma confirmação
+      // simples — sem tentar abrir o WhatsApp de forma alguma.
+      if (!CONFIG.enviarWhatsapp) {
+        await salvarPedidoEObterNumero(dadosPedido).catch(function () { return null; });
+
+        closeCheckout();
+        cart = [];
+        currentCoupon = null;
+        renderCart();
+
+        var orderConfirmedTitleSemWhats = document.getElementById('orderConfirmedTitle');
+        if (orderConfirmedTitleSemWhats) orderConfirmedTitleSemWhats.innerHTML = 'Pedido Recebido!';
+        var orderConfirmedTextSemWhats = document.getElementById('orderConfirmedText');
+        if (orderConfirmedTextSemWhats) {
+          orderConfirmedTextSemWhats.innerHTML = `Maiores informações pelo telefone:<br><strong style="white-space:nowrap">${formatarTelefoneExibicao(CONFIG.whatsapp)}</strong>.`;
+        }
+        document.getElementById('orderConfirmed').classList.add('open');
+
+        if (btnEnviar) btnEnviar.disabled = false;
+        if (btnEnviarTexto) btnEnviarTexto.textContent = textoOriginalBtn || 'Enviar Pedido pelo WhatsApp';
+        var btnFecharXSemWhats = document.getElementById('orderConfirmedCloseX');
+        var btnFecharOkSemWhats = document.getElementById('orderConfirmedOk');
+        if (btnFecharXSemWhats) { btnFecharXSemWhats.disabled = false; btnFecharXSemWhats.style.opacity = ''; btnFecharXSemWhats.style.cursor = ''; }
+        if (btnFecharOkSemWhats) { btnFecharOkSemWhats.disabled = false; btnFecharOkSemWhats.style.opacity = ''; btnFecharOkSemWhats.style.cursor = ''; btnFecharOkSemWhats.textContent = 'OK'; }
+        return;
       }
 
       // Detecta o Safari de verdade (app da Apple) o quanto antes — nele, precisamos abrir
