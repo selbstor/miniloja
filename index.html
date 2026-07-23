@@ -3778,9 +3778,7 @@
         renderCart();
         var orderConfirmedTitle = document.getElementById('orderConfirmedTitle');
         if (orderConfirmedTitle) {
-          orderConfirmedTitle.innerHTML = incluirNumero
-            ? `Pedido Recebido nº: <span style="font-size:1.2em">#${numeroParaExibir}</span>`
-            : 'Pedido Recebido!';
+          orderConfirmedTitle.innerHTML = 'Pedido Recebido!';
         }
         var orderConfirmedText = document.getElementById('orderConfirmedText');
         if (orderConfirmedText) {
@@ -3899,11 +3897,11 @@
       if (btnEnviar) btnEnviar.disabled = false;
       if (btnEnviarTexto) btnEnviarTexto.textContent = textoOriginalBtn || 'Enviar Pedido';
 
-      // Dá um tempinho pro cliente realmente ver a mensagem "Pedido Recebido!" antes da
+      // Dá um tempinho pro cliente realmente ver a mensagem completa do pedido antes da
       // tela trocar pro WhatsApp (o app costuma abrir muito rápido, sem esse atraso a
       // confirmação mal aparece na tela). O Safari de verdade já foi tratado à parte acima
       // (ele precisa de abertura imediata), então aqui sempre é seguro usar o tempo maior.
-      await new Promise(function (resolve) { setTimeout(resolve, 4000); });
+      await new Promise(function (resolve) { setTimeout(resolve, 7000); });
 
       // Tenta abrir direto no aplicativo do WhatsApp (celular ou desktop, se instalado);
       // se o app não abrir em pouco tempo, cai automaticamente no WhatsApp Web/wa.me
